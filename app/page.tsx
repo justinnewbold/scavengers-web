@@ -22,9 +22,21 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [showComingSoon, setShowComingSoon] = useState(false)
+  const [emailError, setEmailError] = useState('')
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address')
+      return
+    }
+    setEmailError('')
     setSubmitted(true)
     setEmail('')
   }
@@ -44,9 +56,10 @@ export default function Home() {
               <a href="#features" className="text-gray-300 hover:text-white transition">Features</a>
               <a href="#pricing" className="text-gray-300 hover:text-white transition">Pricing</a>
               <a href="#how-it-works" className="text-gray-300 hover:text-white transition">How It Works</a>
-              <a 
-                href="https://github.com/justinnewbold/scavengers" 
+              <a
+                href="https://github.com/justinnewbold/scavengers"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="bg-primary hover:bg-primary-light px-4 py-2 rounded-lg font-semibold transition"
               >
                 Get the App
@@ -66,11 +79,14 @@ export default function Home() {
         {mobileMenuOpen && (
           <div className="md:hidden glass border-t border-border">
             <div className="px-4 py-4 space-y-4">
-              <a href="#features" className="block text-gray-300 hover:text-white">Features</a>
-              <a href="#pricing" className="block text-gray-300 hover:text-white">Pricing</a>
-              <a href="#how-it-works" className="block text-gray-300 hover:text-white">How It Works</a>
-              <a 
+              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white">Features</a>
+              <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white">Pricing</a>
+              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white">How It Works</a>
+              <a
                 href="https://github.com/justinnewbold/scavengers"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
                 className="block bg-primary hover:bg-primary-light px-4 py-2 rounded-lg font-semibold text-center"
               >
                 Get the App
@@ -99,9 +115,10 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
+            <a
               href="https://github.com/justinnewbold/scavengers"
               target="_blank"
+              rel="noopener noreferrer"
               className="bg-primary hover:bg-primary-light px-8 py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition transform hover:scale-105"
             >
               <Smartphone size={20} />
@@ -298,12 +315,20 @@ export default function Home() {
                 ))}
               </ul>
               
-              <button 
-                className="block w-full bg-primary hover:bg-primary-light py-3 rounded-xl font-semibold text-center transition"
-                onClick={() => alert('Coming soon!')}
+              <button
+                className="block w-full bg-primary hover:bg-primary-light py-3 rounded-xl font-semibold text-center transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled
+                onMouseEnter={() => setShowComingSoon(true)}
+                onMouseLeave={() => setShowComingSoon(false)}
+                onClick={() => setShowComingSoon(true)}
               >
                 Coming Soon
               </button>
+              {showComingSoon && (
+                <p className="text-center text-sm text-gray-400 mt-2 animate-pulse">
+                  Premium subscriptions launching soon!
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -323,21 +348,31 @@ export default function Home() {
               Thanks! We'll notify you when the app launches.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary"
-              />
-              <button 
-                type="submit"
-                className="bg-primary hover:bg-primary-light px-6 py-3 rounded-xl font-semibold transition whitespace-nowrap"
-              >
-                Get Notified
-              </button>
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (emailError) setEmailError('')
+                  }}
+                  required
+                  className={`flex-1 bg-surface border rounded-xl px-4 py-3 focus:outline-none focus:border-primary ${
+                    emailError ? 'border-red-500' : 'border-border'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  className="bg-primary hover:bg-primary-light px-6 py-3 rounded-xl font-semibold transition whitespace-nowrap"
+                >
+                  Get Notified
+                </button>
+              </div>
+              {emailError && (
+                <p className="text-red-500 text-sm mt-2">{emailError}</p>
+              )}
             </form>
           )}
         </div>
@@ -355,7 +390,7 @@ export default function Home() {
             <div className="flex gap-8 text-gray-400">
               <a href="#" className="hover:text-white transition">Privacy</a>
               <a href="#" className="hover:text-white transition">Terms</a>
-              <a href="https://github.com/justinnewbold/scavengers" target="_blank" className="hover:text-white transition">GitHub</a>
+              <a href="https://github.com/justinnewbold/scavengers" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">GitHub</a>
             </div>
             
             <div className="text-gray-500 text-sm">
