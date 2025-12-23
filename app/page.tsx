@@ -1,21 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { 
-  Sparkles, 
-  Camera, 
-  MapPin, 
-  QrCode, 
-  Users, 
-  Zap, 
-  Shield, 
-  DollarSign,
+import {
+  Sparkles,
+  Camera,
+  MapPin,
+  QrCode,
+  Users,
+  Shield,
   Smartphone,
   ArrowRight,
   Check,
-  Star,
   Menu,
-  X
+  X,
+  Loader2
 } from 'lucide-react'
 
 export default function Home() {
@@ -24,21 +22,43 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false)
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [emailError, setEmailError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateEmail(email)) {
       setEmailError('Please enter a valid email address')
       return
     }
     setEmailError('')
-    setSubmitted(true)
-    setEmail('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setEmailError(data.error || 'Something went wrong. Please try again.')
+        return
+      }
+
+      setSubmitted(true)
+      setEmail('')
+    } catch {
+      setEmailError('Failed to subscribe. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -66,9 +86,11 @@ export default function Home() {
               </a>
             </div>
 
-            <button 
+            <button
               className="md:hidden text-white"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -348,9 +370,11 @@ export default function Home() {
               Thanks! We'll notify you when the app launches.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto" aria-label="Email signup form">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <label htmlFor="email-input" className="sr-only">Email address</label>
                 <input
+                  id="email-input"
                   type="email"
                   placeholder="Enter your email"
                   value={email}
@@ -359,19 +383,28 @@ export default function Home() {
                     if (emailError) setEmailError('')
                   }}
                   required
+                  aria-describedby={emailError ? 'email-error' : undefined}
                   className={`flex-1 bg-surface border rounded-xl px-4 py-3 focus:outline-none focus:border-primary ${
                     emailError ? 'border-red-500' : 'border-border'
                   }`}
                 />
                 <button
                   type="submit"
-                  className="bg-primary hover:bg-primary-light px-6 py-3 rounded-xl font-semibold transition whitespace-nowrap"
+                  disabled={isLoading}
+                  className="bg-primary hover:bg-primary-light px-6 py-3 rounded-xl font-semibold transition whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Get Notified
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Subscribing...
+                    </>
+                  ) : (
+                    'Get Notified'
+                  )}
                 </button>
               </div>
               {emailError && (
-                <p className="text-red-500 text-sm mt-2">{emailError}</p>
+                <p id="email-error" className="text-red-500 text-sm mt-2" role="alert">{emailError}</p>
               )}
             </form>
           )}
