@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   Sparkles,
   Camera,
@@ -13,8 +15,15 @@ import {
   Check,
   Menu,
   X,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-react'
+
+// Dynamically import Turnstile to avoid SSR issues
+const Turnstile = dynamic(() => import('./components/Turnstile'), { ssr: false })
+
+// Simulated waitlist count (in production, fetch from API)
+const WAITLIST_COUNT = 1247
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -23,11 +32,44 @@ export default function Home() {
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+
+  const faqs = [
+    {
+      question: 'Is Scavengers really free?',
+      answer: 'Yes! The free tier lets you create hunts with up to 15 participants and 3 active hunts. No credit card required, no hidden fees.'
+    },
+    {
+      question: 'How does AI hunt generation work?',
+      answer: 'Simply describe your theme, location, and preferences. Our AI analyzes your input and generates creative challenges, point values, hints, and verification methods in about 30 seconds.'
+    },
+    {
+      question: 'Can I use Scavengers without internet?',
+      answer: 'Absolutely! Download your hunt before going offline. All challenges, hints, and verification work locally. Scores sync automatically when you reconnect.'
+    },
+    {
+      question: 'What types of challenges can I create?',
+      answer: 'Photo challenges (AI-verified), GPS location tasks, QR code scans, trivia questions, and custom text-based challenges. Mix and match for the perfect hunt!'
+    },
+    {
+      question: 'How many people can play at once?',
+      answer: 'Free accounts support up to 15 players per hunt. Premium subscribers get unlimited participants, perfect for corporate events, weddings, or large gatherings.'
+    },
+    {
+      question: 'Is my data safe?',
+      answer: 'We take privacy seriously. Photos are processed locally when possible, and we never sell your data. See our Privacy Policy for full details.'
+    },
+  ]
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
   }
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,7 +84,7 @@ export default function Home() {
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       })
 
       const data = await response.json()
@@ -356,12 +398,50 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section id="faq" className="py-20 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            <p className="text-gray-400">Everything you need to know about Scavengers</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, i) => (
+              <div key={i} className="glass rounded-xl overflow-hidden">
+                <button
+                  className="w-full px-6 py-4 text-left flex items-center justify-between gap-4"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span className="font-semibold">{faq.question}</span>
+                  <ChevronDown
+                    className={`text-primary transition-transform flex-shrink-0 ${
+                      openFaq === i ? 'rotate-180' : ''
+                    }`}
+                    size={20}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-4 text-gray-400">
+                    {faq.answer}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-background-secondary">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-4">Ready to Create Your First Hunt?</h2>
-          <p className="text-gray-400 mb-8">
+          <p className="text-gray-400 mb-2">
             Join thousands of people creating unforgettable scavenger hunt experiences.
+          </p>
+          <p className="text-primary font-semibold mb-8">
+            🎉 {WAITLIST_COUNT.toLocaleString()}+ people already on the waitlist!
           </p>
           
           {submitted ? (
@@ -390,7 +470,7 @@ export default function Home() {
                 />
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !turnstileToken}
                   className="bg-primary hover:bg-primary-light px-6 py-3 rounded-xl font-semibold transition whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
@@ -403,6 +483,7 @@ export default function Home() {
                   )}
                 </button>
               </div>
+              <Turnstile onVerify={handleTurnstileVerify} />
               {emailError && (
                 <p id="email-error" className="text-red-500 text-sm mt-2" role="alert">{emailError}</p>
               )}
@@ -421,8 +502,8 @@ export default function Home() {
             </div>
             
             <div className="flex gap-8 text-gray-400">
-              <a href="#" className="hover:text-white transition">Privacy</a>
-              <a href="#" className="hover:text-white transition">Terms</a>
+              <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
+              <Link href="/terms" className="hover:text-white transition">Terms</Link>
               <a href="https://github.com/justinnewbold/scavengers" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">GitHub</a>
             </div>
             

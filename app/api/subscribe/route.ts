@@ -50,7 +50,33 @@ export async function POST(request: Request) {
       )
     }
 
-    const { email } = await request.json()
+    const { email, turnstileToken } = await request.json()
+
+    // Verify Turnstile token if configured
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
+    if (turnstileSecret && turnstileToken && turnstileToken !== 'development-mode') {
+      const turnstileResponse = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            secret: turnstileSecret,
+            response: turnstileToken,
+            remoteip: ip,
+          }),
+        }
+      )
+
+      const turnstileResult = await turnstileResponse.json()
+
+      if (!turnstileResult.success) {
+        return NextResponse.json(
+          { error: 'Bot verification failed. Please try again.' },
+          { status: 400 }
+        )
+      }
+    }
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
