@@ -8,6 +8,10 @@
   --background-end-rgb: 26, 26, 46;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -25,10 +29,22 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .glass {
     background: rgba(30, 30, 50, 0.8);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(108, 99, 255, 0.2);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 }
